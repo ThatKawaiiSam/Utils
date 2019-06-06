@@ -19,4 +19,11 @@ public class MathsUtility {
         return Math.abs(input);
     }
 
+    /**
+     * Get Proper string for number
+     */
+    public static String getCorrectPronumeral(String text, int input) {
+        return text + (input == 1 ? "" : "s");
+    }
+
 }
