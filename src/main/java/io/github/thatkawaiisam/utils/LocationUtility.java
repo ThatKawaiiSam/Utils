@@ -1,7 +1,9 @@
 package io.github.thatkawaiisam.utils;
 
+import com.google.gson.JsonObject;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 
 public class LocationUtility {
 
@@ -34,6 +36,27 @@ public class LocationUtility {
             ex.printStackTrace();
             return null;
         }
+    }
+
+    public static JsonObject parseToJson(Location location) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("x", location.getX());
+        jsonObject.addProperty("y", location.getY());
+        jsonObject.addProperty("z", location.getZ());
+        jsonObject.addProperty("yaw", location.getYaw());
+        jsonObject.addProperty("pitch", location.getPitch());
+        jsonObject.addProperty("world", location.getWorld().getName());
+        return jsonObject;
+    }
+
+    public static Location parseToLocation(JsonObject jsonObject) {
+        double x = jsonObject.get("x").getAsDouble();
+        double y = jsonObject.get("y").getAsDouble();
+        double z = jsonObject.get("z").getAsDouble();
+        float yaw = jsonObject.get("yaw").getAsFloat();
+        float pitch = jsonObject.get("pitch").getAsFloat();
+        World world   = Bukkit.getWorld(jsonObject.get("world").getAsString());
+        return new Location(world, x, y, z, yaw, pitch);
     }
 
 }
