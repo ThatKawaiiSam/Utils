@@ -13,9 +13,6 @@ public class MathsUtility {
      * Convert a value to a positive value
      */
     public static int convertToPositive(int input){
-        if (input > 0){
-            return input;
-        }
         return Math.abs(input);
     }
 

@@ -5,7 +5,7 @@ import org.bukkit.ChatColor;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MessageUtility {
+public final class MessageUtility {
 
     /**
      * Translates the '&' character into its respective colour code.

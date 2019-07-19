@@ -7,7 +7,6 @@ import java.lang.reflect.Field;
 
 public class TPSUtility {
 
-
     private static Object minecraftServer;
     private static Field recentTps;
     private static Boolean isPaperSpigot = null;

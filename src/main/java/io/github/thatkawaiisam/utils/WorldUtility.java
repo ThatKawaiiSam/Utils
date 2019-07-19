@@ -7,7 +7,7 @@ import org.bukkit.WorldCreator;
 import java.io.File;
 import java.io.IOException;
 
-public class WorldUtility {
+public final class WorldUtility {
 
     /**
      * Copies a world from a directory to a new directory.
