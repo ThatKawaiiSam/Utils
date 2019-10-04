@@ -6,8 +6,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import lombok.Getter;
 import lombok.Setter;
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.Configuration;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitScheduler;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,6 +43,15 @@ public class CachedInventory {
         }
     }
 
+    private void delayedUpdateInventory(Player player, JavaPlugin plugin) {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                player.updateInventory();
+            }
+        }.runTaskLater(plugin, 1);
+    }
+
     //From player to cached inventory.
     public static CachedInventory fromPlayer(Player player, boolean justContents) {
         return new CachedInventory(player, justContents);
@@ -48,7 +63,7 @@ public class CachedInventory {
         player.getInventory().setArmorContents(this.cachedArmor);
 
         if (!justContents) {
-            if (health != -1) {
+            if (health > 0) {
                 player.setHealth(this.health);
             }
             if (this.food != -1) {
@@ -61,6 +76,88 @@ public class CachedInventory {
                 player.setExp(this.exp);
             }
         }
+    }
+
+    public void applyToPlayer(Player player, boolean justContents, JavaPlugin plugin) {
+        applyToPlayer(player, justContents);
+        delayedUpdateInventory(player, plugin);
+    }
+
+    public static CachedInventory fromConfigurationSection(ConfigurationSection section) {
+        CachedInventory cachedInventory = new CachedInventory();
+
+        // Armor
+        List<String> armorArray = section.getStringList("armor");
+        List<ItemStack> armor = new ArrayList<>();
+
+        armorArray.forEach(armorElement -> {
+            try {
+                armor.add(ItemBuilder.itemFrom64(armorElement));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        cachedInventory.setCachedArmor(armor.stream().toArray(ItemStack[]::new));
+
+        // Inventory
+        List<String> invArray = section.getStringList("inv");
+        List<ItemStack> inv = new ArrayList<>();
+
+        invArray.forEach(invElement -> {
+            try {
+                inv.add(ItemBuilder.itemFrom64(invElement));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+        cachedInventory.setCachedInventory(inv.stream().toArray(ItemStack[]::new));
+
+        // Health and Others
+        if (section.contains("health")) {
+            cachedInventory.setHealth(section.getDouble("health"));
+        }
+        if (section.contains("totalExperience")) {
+            cachedInventory.setHealth(section.getInt("totalExperience"));
+        }
+        if (section.contains("food")) {
+            cachedInventory.setHealth(section.getInt("food"));
+        }
+        if (section.contains("exp")) {
+            cachedInventory.setHealth(section.getFloat("exp"));
+        }
+
+        return cachedInventory;
+    }
+
+    public ConfigurationSection toConfigurationSection(Configuration configuration, String sectionName) {
+        ConfigurationSection section = configuration.createSection(sectionName);
+
+        if (this.health != -1) {
+            section.set("health", health);
+        }
+        if (this.totalExperience != -1) {
+            section.set("totalExperience", totalExperience);
+        }
+        if (this.food != -1) {
+            section.set("food", food);
+        }
+        if (this.exp != -1) {
+            section.set("exp", exp);
+        }
+
+        List<String> armor = new ArrayList<>();
+        for (ItemStack armorItem : getCachedArmor()) {
+            armor.add(ItemBuilder.itemTo64(armorItem));
+        }
+        section.set("armor", armor);
+
+        List<String> inv = new ArrayList<>();
+        for (ItemStack invItem : getCachedInventory()) {
+            inv.add(ItemBuilder.itemTo64(invItem));
+        }
+        section.set("inv", inv);
+
+        return section;
     }
 
     public static CachedInventory fromJson(JsonObject jsonObject) {

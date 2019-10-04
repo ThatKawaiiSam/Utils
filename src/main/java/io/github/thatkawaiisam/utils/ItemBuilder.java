@@ -11,6 +11,7 @@ import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -24,6 +25,7 @@ public class ItemBuilder {
     private byte materialData;
     private HashMap<Enchantment, Integer> enchantments = new HashMap<>();
     private ItemStack itemStack;
+    private boolean unbreakable = false;
 
     public ItemBuilder() {
         this.itemStack = new ItemStack(Material.AIR);
@@ -62,13 +64,18 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder lores(String... lores) {
+        this.lores = Arrays.asList(lores);
+        return this;
+    }
+
     public ItemBuilder enchantment(final Enchantment enchantment, final int level) {
-        enchantments.put(enchantment, level);
+        this.enchantments.put(enchantment, level);
         return this;
     }
 
     public ItemBuilder enchantment(final Enchantment enchantment) {
-        enchantment(enchantment, 1);
+        this.enchantment(enchantment, 1);
         return this;
     }
 
@@ -83,7 +90,12 @@ public class ItemBuilder {
     }
 
     public ItemBuilder clearEnchantments() {
-        enchantments.clear();
+        this.enchantments.clear();
+        return this;
+    }
+
+    public ItemBuilder unbreakable(boolean b1) {
+        this.unbreakable = b1;
         return this;
     }
 
@@ -97,6 +109,7 @@ public class ItemBuilder {
             itemStack.addUnsafeEnchantment(enchantment, enchantments.get(enchantment));
         }
         ItemMeta meta = itemStack.getItemMeta();
+        meta.spigot().setUnbreakable(this.unbreakable);
         if (this.amount > 0)
             itemStack.setAmount(this.amount);
         if (this.durability != null)

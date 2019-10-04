@@ -1,5 +1,6 @@
 package io.github.thatkawaiisam.utils;
 
+import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.io.BukkitObjectInputStream;
@@ -59,6 +60,17 @@ public class InventoryUtility {
             }
         }
         return false;
+    }
+
+    public static int freeSlots(Inventory inventory) {
+        int i = 0;
+        for (ItemStack is : inventory.getContents()) {
+            if (is != null && is.getType() != Material.AIR) {
+                continue;
+            }
+            i++;
+        }
+        return i;
     }
 
     public static boolean canFitItemStack(Inventory inventory, ItemStack itemStack) {
