@@ -1,10 +1,16 @@
 package io.github.thatkawaiisam.utils;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -13,54 +19,91 @@ import java.util.concurrent.Executors;
 public class UUIDUtility {
 
     static ExecutorService executorService = Executors.newFixedThreadPool(1);
+    private static JsonParser parser = new JsonParser();
+    private static final String USER_AGENT = "Mozilla/5.0";
 
     public static CompletableFuture<UUIDPair> getUUID(String player) {
-        return CompletableFuture.supplyAsync(() -> {
-            UUIDPair uuidPair = new UUIDPair();
-            if (player == null) {
-                uuidPair.setUuid(null);
-                uuidPair.setName(null);
-                uuidPair.setLocation(UUIDLocation.OFFLINE);
-            } else if (Bukkit.getPlayer(player) != null && Bukkit.getPlayer(player).isOnline()) {
-                uuidPair.setUuid(Bukkit.getPlayer(player).getUniqueId());
-                uuidPair.setName(Bukkit.getPlayer(player).getName());
-                uuidPair.setLocation(UUIDLocation.ONLINE);
-            } else if (Bukkit.getOfflinePlayer(player) != null) {
-                uuidPair.setUuid(Bukkit.getOfflinePlayer(player).getUniqueId());
-                uuidPair.setName(Bukkit.getOfflinePlayer(player).getName());
-                uuidPair.setLocation(Bukkit.getOfflinePlayer(player).hasPlayedBefore() ? UUIDLocation.OFFLINE : UUIDLocation.NEVER_PLAYED);
-            } else {
-                uuidPair.setUuid(null);
-                uuidPair.setName(null);
-                uuidPair.setLocation(UUIDLocation.OFFLINE);
-            }
-            return uuidPair;
-        }, executorService);
-    }
+        UUIDPair uuidPair = new UUIDPair();
 
-    public void something() {
-        getUUID("ThatKawaiiSam").whenComplete(((uuidPair, throwable) -> {
-            System.out.println(uuidPair.getUuid());
-        }));
+        if (Bukkit.getPlayer(player) != null) {
+            uuidPair.setName(Bukkit.getPlayer(player).getName());
+            uuidPair.setUuid(Bukkit.getPlayer(player).getUniqueId());
+            uuidPair.setLocation(UUIDLocation.ONLINE);
+            return CompletableFuture.completedFuture(uuidPair);
+        }
+
+        if (Bukkit.getOfflinePlayer(player) != null && Bukkit.getOfflinePlayer(player).hasPlayedBefore()) {
+            uuidPair.setName(Bukkit.getOfflinePlayer(player).getName());
+            uuidPair.setUuid(Bukkit.getOfflinePlayer(player).getUniqueId());
+            uuidPair.setLocation(UUIDLocation.OFFLINE);
+            return CompletableFuture.completedFuture(uuidPair);
+        }
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                String url = "https://api.ashcon.app/mojang/v2/user/" + player;
+                URL obj = new URL(url);
+                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+                con.setRequestProperty("User-Agent", USER_AGENT);
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+                JsonElement object = parser.parse(response.toString());
+                JsonObject parsedObject = object.getAsJsonObject();
+                uuidPair.setUuid(UUID.fromString(parsedObject.get("uuid").getAsString()));
+                uuidPair.setName(parsedObject.get("username").getAsString());
+                uuidPair.setLocation(UUIDLocation.NEVER_PLAYED);
+                return uuidPair;
+            } catch (Exception e) {
+                return null;
+            }
+        }, executorService);
     }
 
     public static CompletableFuture<UUIDPair> getName(UUID uuid) {
         UUIDPair uuidPair = new UUIDPair();
+
+        if (Bukkit.getPlayer(uuid) != null) {
+            uuidPair.setName(Bukkit.getPlayer(uuid).getName());
+            uuidPair.setUuid(uuid);
+            uuidPair.setLocation(UUIDLocation.ONLINE);
+            return CompletableFuture.completedFuture(uuidPair);
+        }
+
+        if (Bukkit.getOfflinePlayer(uuid) != null && Bukkit.getOfflinePlayer(uuid).hasPlayedBefore()) {
+            uuidPair.setName(Bukkit.getOfflinePlayer(uuid).getName());
+            uuidPair.setUuid(uuid);
+            uuidPair.setLocation(UUIDLocation.OFFLINE);
+            return CompletableFuture.completedFuture(uuidPair);
+        }
+
         return CompletableFuture.supplyAsync(() -> {
-            if (Bukkit.getPlayer(uuid) != null && Bukkit.getPlayer(uuid).isOnline()) {
-                uuidPair.setUuid(Bukkit.getPlayer(uuid).getUniqueId());
-                uuidPair.setName(Bukkit.getPlayer(uuid).getName());
-                uuidPair.setLocation(UUIDLocation.ONLINE);
-            } else if (Bukkit.getOfflinePlayer(uuid) != null) {
-                uuidPair.setUuid(Bukkit.getOfflinePlayer(uuid).getUniqueId());
-                uuidPair.setName(Bukkit.getOfflinePlayer(uuid).getName());
-                uuidPair.setLocation(Bukkit.getOfflinePlayer(uuid).hasPlayedBefore() ? UUIDLocation.OFFLINE : UUIDLocation.NEVER_PLAYED);
-            } else {
-                uuidPair.setUuid(null);
-                uuidPair.setName(null);
-                uuidPair.setLocation(UUIDLocation.OFFLINE);
+            try {
+                String url = "https://api.ashcon.app/mojang/v2/user/" + uuid;
+                URL obj = new URL(url);
+                HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+                con.setRequestProperty("User-Agent", USER_AGENT);
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                String inputLine;
+                StringBuffer response = new StringBuffer();
+                while ((inputLine = in.readLine()) != null) {
+                    response.append(inputLine);
+                }
+                in.close();
+                JsonElement object = parser.parse(response.toString());
+                JsonObject parsedObject = object.getAsJsonObject();
+                uuidPair.setUuid(uuid);
+                uuidPair.setName(parsedObject.get("username").getAsString());
+                return uuidPair;
+            } catch (Exception e) {
+                return null;
             }
-            return uuidPair;
         }, executorService);
     }
 

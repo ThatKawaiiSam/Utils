@@ -1,7 +1,7 @@
 package io.github.thatkawaiisam.utils;
 
 import com.google.common.collect.ImmutableSet;
-import org.bukkit.plugin.Plugin;
+
 
 import java.io.IOException;
 import java.net.URL;
@@ -21,15 +21,14 @@ public final class ClassUtility {
     /**
      * Gets all the classes in a the provided package.
      *
-     * @param plugin      The plugin who owns the package
      * @param packageName The package to scan classes in.
      *
      * @return The classes in the package packageName.
      */
-    public static Collection<Class<?>> getClassesInPackage(Plugin plugin, String packageName) {
+    public static Collection<Class<?>> getClassesInPackage(Class sourceClazz, String packageName) {
         Collection<Class<?>> classes = new ArrayList<>();
 
-        CodeSource codeSource = plugin.getClass().getProtectionDomain().getCodeSource();
+        CodeSource codeSource = sourceClazz.getProtectionDomain().getCodeSource();
         URL resource = codeSource.getLocation();
         String relPath = packageName.replace('.', '/');
         String resPath = resource.getPath().replace("%20", " ");
